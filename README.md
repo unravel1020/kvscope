@@ -121,19 +121,21 @@ eviction rounds          59         42      -17
 
 ## 双机同步（办公本 ↔ 家庭 GPU 主机）
 
-本项目是独立 Git 仓库（GitHub: `unravel1020/kvscope`），双机通过 GitHub 同步：
+本项目是独立 Git 仓库（GitHub: `unravel1020/kvscope`），双机通过 GitHub 同步。
+
+**主工作区在 WSL `~/kvscope`**（与 sglang 环境同级，模拟脚本需要 sglang）：
+- 办公本 WSL：白天做分析端开发 + `create_simulated` 模拟验证（纯 CPU）
+- 家庭主机：晚上跑真实 SGLang 服务器 → 真实 dump → 分析（v0.7 规划）
+- Windows 侧（`D:\Project\labs\kvscope`）仅是同步副本，日常开发在 WSL
 
 ```bash
-# 家庭主机首次拉取
-git clone https://github.com/unravel1020/kvscope.git
-
-# 之后同步（办公本推、家庭机拉，或反之）
-git pull origin master
+# WSL 主工作区同步
+cd ~/kvscope && git pull origin master
+# 跑测试（用 sglang 的 venv，含 pytest）
+/home/unravel/sglang/.venv/bin/python -m pytest tests/ -q
 ```
 
-- **办公本（无 GPU）**：白天做分析端开发 + `create_simulated` 模拟验证（纯 CPU）
-- **家庭主机（RTX 3080）**：晚上跑真实 SGLang 服务器 → 真实 dump → 分析（v0.7 规划）
-- 研究文档（RESEARCH/ADR/DESIGN）随仓库同步，两机共享
+研究文档（RESEARCH/ADR/DESIGN）随仓库同步，两机共享。
 
 ## 开发状态
 
