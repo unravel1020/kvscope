@@ -1,8 +1,9 @@
 # SGLang KV Cache 分析器 — 数据模型设计文档
 
-> 日期：2026-08-28 ｜ 状态：初版定稿
+> 日期：2026-08-28 ｜ 状态：最终设计（v0.6 定稿）
 > 项目定位：SGLang 的 "KV cache 显微镜"——离线分析 radix cache 结构/共享率/碎片/驱逐效率
 > 参考蓝本：vLLM 官方离线 prefix-cache analyzer（PR #48369/#48838，未合并，我们模仿其模式但面向 SGLang）
+> 版本演进：v0.1 快照 → v0.2 端到端 → v0.3 turns → v0.4 events → v0.5 gaps → v0.6 evict（见 RESEARCH.md）
 
 ## 一、为什么数据模型要基于 radix cache 而非 block hash
 
@@ -117,19 +118,27 @@ hot nodes (hit>10)   : 8 (6.2%)  ← top hit: 14
 | CLI（`--model --input --block-size --output-format`） | ✅ **完全模仿** | `--input snapshot.jsonl --output-format {text,json}` |
 | 单测（合成数据、不依赖 tokenizer） | ✅ **完全模仿** | 合成 TreeNode 快照测分组/计数/边角 |
 
-## 六、MVP 架构（目录规划）
+## 六、架构（实际落地，v0.6）
 
 ```
 kvscope/                          # 项目名（SGLang KV cache 显微镜）
 ├── kvscope/
 │   ├── __init__.py
-│   ├── cli.py                    # CLI 入口（模仿 vLLM CLISubcommand 模式）
-│   ├── snapshot.py               # 快照 JSONL 解析 + 校验
-│   ├── tree.py                   # 快照 → 树重建 + DFS 分析
-│   ├── report.py                 # AnalysisReport dataclass + text/json 渲染
-│   └── dump.py                   # （v2）从运行中 SGLang 导出快照的 hook
-├── tests/
-│   └── test_tree.py              # 合成快照单测
+│   ├── cli.py                    # CLI 入口：analyze / turns / events / gaps / evict
+│   ├── snapshot.py               # 快照 JSONL 解析 + 校验（utf-8-sig 容错）
+│   ├── tree.py                   # 快照 → 树重建 + DFS 分析（单次遍历）
+│   ├── report.py                 # 快照报告渲染（text/json）
+│   ├── dump.py                   # 遍历 RadixCache → 快照 JSONL（duck-typed）
+│   ├── turns.py                  # per-turn KV-reuse 分析（含 hit 长度算法）
+│   ├── events.py                 # KV 事件流分析（churn/驱逐时间线）
+│   ├── gaps.py                   # gap 衰减模型（logistic P(hit|gap)）
+│   └── evict.py                  # 驱逐策略对比报告
+├── scripts/
+│   ├── simulate_agent_workload.py  # 多轮 agent 模拟 → snapshot+turns+events（需 sglang）
+│   └── simulate_evict_compare.py   # 驱逐策略对比实验（需 sglang）
+├── examples/                     # 真实 SGLang 产生的样例数据
+├── tests/                        # 38 个合成数据单测（零依赖）
+├── docs/                         # DESIGN / ADR / RESEARCH
 ├── pyproject.toml
 └── README.md
 ```
@@ -142,3 +151,47 @@ kvscope/                          # 项目名（SGLang KV cache 显微镜）
 | 无 GPU 端到端验证 | v1 用 `create_simulated` + 合成快照，纯 CPU；真实 dump 等晚上 3080 |
 | kvcachescope 抢认知 | 差异化定位：结构分析 vs 运维监控 |
 | 快照格式可能被社区质疑 | 主动对齐 `KVCacheEventRecorder`（events.py）的既有事件模型 |
+
+## 八、v0.3-v0.6 数据模型补充
+
+### 8.1 turns（per-turn KV-reuse，v0.3）
+
+```jsonl
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32,
+ "hit_node_id": 1, "timestamp": 6.38, "gap_seconds": 6.38}
+```
+
+- `hit_length` 来源：`compute_hit_length_from_node(last_device_node)` =
+  沿 parent 链累加 `token_len`（从 root 到匹配节点的路径总长）
+- `timestamp`/`gap_seconds`（v0.5 起）：模拟时钟（`clock += gap`），
+  注意 **SGLang 的 `node.last_access_time` 是真实 monotonic 时钟，不可比较**
+
+### 8.2 events（KV 事件流，v0.4）
+
+```jsonl
+{"type": "stored",  "block_hashes": [4634487095784212721], "parent_block_hash": null,
+ "num_tokens": 1, "medium": "GPU"}
+{"type": "removed", "block_hashes": [1,2,3], "medium": "GPU"}
+{"type": "cleared"}
+```
+
+- 结构对齐 SGLang `BlockStored`/`BlockRemoved`/`AllBlocksCleared`
+- 哈希：纯 Python 确定性（sha256 截断）替代 HiCache native 扩展
+
+### 8.3 gaps（gap 衰减模型，v0.5）
+
+- 间隙直方图：`<10s / 10-60s / 1-5min / 5-30min / >30min`
+- 衰减曲线：每桶的 next-turn hit ratio（实证：<10s 93%、5-30min 0%）
+- logistic 模型：`P(hit|gap) = 1/(1+exp(-(a + b·ln(gap))))`，最小二乘拟合
+- `cache_decay_probability(gap) = 1 - P(hit|gap)` = 预测性驱逐信号
+
+### 8.4 evict（驱逐策略对比，v0.6）
+
+```json
+{"workload": {...}, "strategies": {
+  "lru":        {"hit_ratio": 0.88, "eviction_rounds": 59},
+  "predictive": {"hit_ratio": 0.88, "eviction_rounds": 42}}}
+```
+
+- 实验设计：相同请求序列 + 有限 KV 池 + 唯一差异 = "长间隙主动清理"
+- 结果：同命中率下预测性驱逐 -29% 驱逐轮次（CacheWise 方向实证）
