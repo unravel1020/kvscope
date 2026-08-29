@@ -1,0 +1,25 @@
+{
+  "workload": {
+    "n_turns": 60,
+    "n_conversations": 10,
+    "turns_per_conv": 6,
+    "system_prompt_tokens": 512,
+    "pool_tokens": 1000,
+    "long_gap_prob": 0.25,
+    "decay_threshold_s": 300.0
+  },
+  "strategies": {
+    "lru": {
+      "hit_ratio": 0.8797250859106529,
+      "total_hit": 30720,
+      "total_ctx": 34920,
+      "eviction_rounds": 59
+    },
+    "predictive": {
+      "hit_ratio": 0.8797250859106529,
+      "total_hit": 30720,
+      "total_ctx": 34920,
+      "eviction_rounds": 42
+    }
+  }
+}

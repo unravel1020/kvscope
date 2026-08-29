@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 from .events import load_events
+from .evict import build_evict_report, load_evict_compare, render_text as render_evict_text
 from .gaps import analyze_gaps_from_file
 from .report import build_report, render_text
 from .snapshot import load_snapshot
@@ -131,6 +132,27 @@ def _build_parser() -> argparse.ArgumentParser:
         default=300.0,
         help="gap (seconds) at/above which the cache is assumed decaying (default: 300)",
     )
+
+    evict = sub.add_parser(
+        "evict",
+        help="compare eviction strategies (LRU vs gap-predictive)",
+        description=(
+            "Render the comparison JSON from scripts/simulate_evict_compare.py: "
+            "same workload under LRU vs predictive eviction on a finite KV pool."
+        ),
+    )
+    evict.add_argument(
+        "--input",
+        type=Path,
+        required=True,
+        help="path to the eviction-comparison JSON",
+    )
+    evict.add_argument(
+        "--output-format",
+        choices=["text", "json"],
+        default="text",
+        help="report format (default: text)",
+    )
     return parser
 
 
@@ -197,6 +219,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(stats.to_dict(), indent=2, ensure_ascii=False))
         else:
             print(stats.render_text())
+        return 0
+
+    if args.command == "evict":
+        try:
+            data = load_evict_compare(args.input)
+            report = build_evict_report(data)
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            print(f"kvscope: error: {e}", file=sys.stderr)
+            return 1
+
+        if args.output_format == "json":
+            print(json.dumps(report, indent=2, ensure_ascii=False))
+        else:
+            print(render_evict_text(report))
         return 0
 
     parser.print_help()
