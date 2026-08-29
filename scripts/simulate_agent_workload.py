@@ -1,7 +1,14 @@
 """Simulate a multi-turn agent workload against SGLang's real radix cache
-(CPU-only, via ``RadixCache.create_simulated``), dumping BOTH:
+(CPU-only, via ``RadixCache.create_simulated``), dumping THREE artifacts:
   1. a radix-tree snapshot (consumed by ``kvscope analyze``)
   2. per-turn KV-reuse records (consumed by ``kvscope turns``)
+  3. a KV placement event stream (consumed by ``kvscope events``)
+
+The event stream mirrors SGLang's ``BlockStored``/``BlockRemoved``/
+``AllBlocksCleared`` wire format (block_hashes / parent_block_hash /
+medium), but uses a deterministic pure-Python hash instead of the
+``HiCache native hash`` C++ extension, so this runs on any CPU without
+building native modules. The radix tree itself is SGLang's real code.
 
 Workload shape (mirrors TraceLab's findings about coding agents):
 - A long shared system prompt (the "tool schema + instructions" prefix).
@@ -9,7 +16,9 @@ Workload shape (mirrors TraceLab's findings about coding agents):
 - Multi-turn: each turn re-sends the growing conversation (prefix reuse),
   so early turns should hit almost everything and reuse should stay high.
 - One cold conversation to show the miss contrast.
+- A small eviction to produce BlockRemoved events.
 """
+import hashlib
 import json
 import sys
 from array import array
@@ -19,6 +28,7 @@ import torch
 
 from sglang.srt.mem_cache.radix_cache import RadixCache, RadixKey
 from sglang.srt.mem_cache.base_prefix_cache import (
+    EvictParams,
     InsertParams,
     MatchPrefixParams,
 )
@@ -27,6 +37,13 @@ sys.path.insert(0, "/mnt/d/Project/labs/kvscope")
 
 from kvscope.dump import write_snapshot  # noqa: E402
 from kvscope.turns import TurnRecord, compute_hit_length_from_node  # noqa: E402
+
+
+def _block_hash(tokens: list[int]) -> int:
+    """Deterministic pure-Python block hash (stand-in for SGLang's native
+    page hash). Stable across runs; NOT cryptographically meaningful."""
+    payload = ",".join(str(t) for t in tokens)
+    return int(hashlib.sha256(payload.encode()).hexdigest()[:16], 16)
 
 SYSTEM_PROMPT = list(range(1000, 1000 + 512))   # 512-token shared system prompt
 CONV_A = list(range(2000, 2000 + 128))          # conversation A divergence
@@ -39,14 +56,15 @@ def _key(tokens):
     return RadixKey(token_ids=array("q", tokens))
 
 
-def _record_turn(turns, cache, turn_no, tokens, conv_name):
-    """Match + record hit data for one turn."""
+def _record_turn(turns, cache, turn_no, tokens, collector, conv_name):
+    """Match + record hit data + store events for one turn."""
     match = cache.match_prefix(MatchPrefixParams(key=_key(tokens)))
     hit_len = compute_hit_length_from_node(match.last_device_node)
-    # Insert the (already-present) context so the tree is complete; the
-    # scheduler normally inserts only the new part, but inserting the whole
-    # context is idempotent for reuse accounting (it reuses the prefix).
-    cache.insert(InsertParams(key=_key(tokens), value=None, priority=0))
+    result = cache.insert(InsertParams(key=_key(tokens), value=None, priority=0))
+    # Record store events for the node(s) the insert touched (last node =
+    # deepest node of the inserted path = the new/updated tail).
+    if result.last_device_node is not None:
+        collector.store(result.last_device_node)
     turns.append(
         TurnRecord(
             turn=turn_no,
@@ -59,6 +77,60 @@ def _record_turn(turns, cache, turn_no, tokens, conv_name):
     return hit_len
 
 
+class EventCollector:
+    """Collects store/remove events in SGLang's wire format, using the
+    deterministic pure-Python block hash. Mirrors KVCacheEventRecorder's
+    event shape so kvscope's events module can consume them."""
+
+    def __init__(self, page_size: int = 1):
+        self.page_size = page_size
+        self.events: list[dict] = []
+
+    def store(self, node):
+        """Record a BlockStored-style event for a tree node."""
+        n_tok = len(node.key) if node.key is not None else 0
+        if n_tok == 0:
+            return
+        raw = list(node.key.token_ids) if hasattr(node.key, "token_ids") else []
+        for start in range(0, n_tok, self.page_size):
+            end = min(start + self.page_size, n_tok)
+            page_tokens = raw[start:end]
+            if not page_tokens:
+                continue
+            h = _block_hash(page_tokens)
+            parent = node.parent
+            parent_hash = None
+            if parent is not None and parent.key is not None and len(parent.key) > 0:
+                parent_raw = list(parent.key.token_ids) if hasattr(parent.key, "token_ids") else []
+                parent_hash = _block_hash(parent_raw[-self.page_size:])
+            self.events.append(
+                {
+                    "type": "stored",
+                    "block_hashes": [h],
+                    "parent_block_hash": parent_hash,
+                    "num_tokens": len(page_tokens),
+                    "medium": "GPU",
+                }
+            )
+
+    def remove(self, node):
+        """Record a BlockRemoved-style event for a tree node."""
+        n_tok = len(node.key) if node.key is not None else 0
+        if n_tok == 0:
+            return
+        raw = list(node.key.token_ids) if hasattr(node.key, "token_ids") else []
+        hashes = []
+        for start in range(0, n_tok, self.page_size):
+            end = min(start + self.page_size, n_tok)
+            page_tokens = raw[start:end]
+            if page_tokens:
+                hashes.append(_block_hash(page_tokens))
+        if hashes:
+            self.events.append(
+                {"type": "removed", "block_hashes": hashes, "medium": "GPU"}
+            )
+
+
 def main(out_prefix: str) -> None:
     mock_allocator = Mock()
     mock_allocator.device = torch.device("cpu")
@@ -66,22 +138,31 @@ def main(out_prefix: str) -> None:
         disable=False, page_size=1, enable_kv_cache_events=False,
         mock_allocator=mock_allocator,
     )
+    collector = EventCollector(page_size=1)
 
     turns: list[TurnRecord] = []
 
     # Warm up with the system prompt (first request inserts it).
-    cache.insert(InsertParams(key=_key(SYSTEM_PROMPT), value=None, priority=0))
+    r = cache.insert(InsertParams(key=_key(SYSTEM_PROMPT), value=None, priority=0))
+    if r.last_device_node is not None:
+        collector.store(r.last_device_node)
 
     # --- Warm conversations (shared prefix, growing context) ---
     for conv_name, conv in (("A", CONV_A), ("B", CONV_B)):
         for turn in range(1, TURNS + 1):
             context = SYSTEM_PROMPT + conv[: turn * 32]
-            _record_turn(turns, cache, turn, context, conv_name)
+            _record_turn(turns, cache, turn, context, collector, conv_name)
 
     # --- Cold conversation (no shared prefix -> first turn is a full miss) ---
     for turn in range(1, TURNS + 1):
         context = CONV_COLD[: turn * 16]
-        _record_turn(turns, cache, turn, context, "COLD")
+        _record_turn(turns, cache, turn, context, collector, "COLD")
+
+    # --- Evict some tokens; record remove events for evicted leaves ---
+    evictable_leaves = list(getattr(cache, "evictable_leaves", []))
+    for node in evictable_leaves:
+        collector.remove(node)
+    cache.evict(EvictParams(num_tokens=40))
 
     # --- Dump snapshot ---
     evictable = cache.evictable_size()
@@ -114,6 +195,13 @@ def main(out_prefix: str) -> None:
                 + "\n"
             )
     print(f"turns: {len(turns)} records -> {turns_path}")
+
+    # --- Dump KV event stream ---
+    events_path = out_prefix + ".events.jsonl"
+    with open(events_path, "w", encoding="utf-8") as f:
+        for ev in collector.events:
+            f.write(json.dumps(ev) + "\n")
+    print(f"events: {len(collector.events)} records -> {events_path}")
 
 
 if __name__ == "__main__":

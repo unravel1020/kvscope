@@ -14,6 +14,7 @@ import json
 import sys
 from pathlib import Path
 
+from .events import load_events
 from .report import build_report, render_text
 from .snapshot import load_snapshot
 from .tree import analyze_tree
@@ -80,6 +81,27 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="report format (default: text)",
     )
+
+    events = sub.add_parser(
+        "events",
+        help="analyze a KV cache event stream (placement/eviction timeline)",
+        description=(
+            "Load an events JSONL (BlockStored/BlockRemoved/AllBlocksCleared) "
+            "and report cache lifecycle, churn and eviction timeline."
+        ),
+    )
+    events.add_argument(
+        "--input",
+        type=Path,
+        required=True,
+        help="path to events JSONL (see scripts/simulate_agent_workload.py)",
+    )
+    events.add_argument(
+        "--output-format",
+        choices=["text", "json"],
+        default="text",
+        help="report format (default: text)",
+    )
     return parser
 
 
@@ -118,6 +140,19 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(summary.to_dict(), indent=2, ensure_ascii=False))
         else:
             print(summary.render_text())
+        return 0
+
+    if args.command == "events":
+        try:
+            stream = load_events(args.input)
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            print(f"kvscope: error: {e}", file=sys.stderr)
+            return 1
+
+        if args.output_format == "json":
+            print(json.dumps(stream.to_dict(), indent=2, ensure_ascii=False))
+        else:
+            print(stream.render_text())
         return 0
 
     parser.print_help()
