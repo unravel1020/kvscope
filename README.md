@@ -42,14 +42,41 @@ kvscope analyze --input snapshot.jsonl --top-k-groups 10
  ]}
 ```
 
+## 端到端 Demo（v0.2）：SGLang 真实 radix cache → kvscope
+
+用 SGLang 自己的 `RadixCache.create_simulated()`（纯 CPU，无需 GPU/模型）跑真实的多轮
+agent 工作负载（共享系统提示词 + 分叉会话 + 驱逐 + 锁），导出快照后交给 kvscope 分析：
+
+```bash
+# 1. 在装有 sglang 的环境（如 WSL）里跑模拟并 dump
+python scripts/simulate_agent_workload.py /tmp/kvscope-demo.jsonl
+
+# 2. 用 kvscope 分析真实快照
+kvscope analyze --input /tmp/kvscope-demo.jsonl
+```
+
+产出（示例）：
+```
+[sharing]
+  reuse ratio       : 25.04%      ← 512-token 系统提示词被 3 会话共享
+  shared nodes      : 1
+[fragmentation]
+  small nodes       : 3           ← 分裂残余（32/8/3 token）
+[eviction]
+  locked nodes      : 1 (512 tokens)
+[hotness]
+  top hit nodes      : #1(10), #2(4), #6(4)
+```
+
 ## 开发状态
 
 - [x] 数据模型设计（docs/DESIGN.md）
 - [x] vLLM 参考实现分析
-- [ ] 快照解析 + 树分析（v1）
-- [ ] CLI（text/json 报告）
-- [ ] 单测（合成快照）
-- [ ] 真实 SGLang dump hook（v2，需 GPU/服务器）
+- [x] 快照解析 + 树分析（v1）
+- [x] CLI（text/json 报告）
+- [x] 单测（合成快照 + dump）
+- [x] 端到端：SGLang 真实 radix 模拟 → dump → analyze（v0.2）
+- [ ] 真实 SGLang server dump hook（v0.3，需运行中的服务器/GPU）
 
 ## 许可
 
