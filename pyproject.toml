@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kvscope"
+version = "0.1.0"
+description = "SGLang KV cache microscope — offline radix-cache structure/sharing/fragmentation/eviction analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "unravel1020" }]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+kvscope = "kvscope.cli:main"
+
+[tool.setuptools]
+packages = ["kvscope"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,12 @@
+{"type": "snapshot", "version": 1, "page_size": 1, "eviction_policy": "lru", "pool": {"total_tokens": 5000, "used_tokens": 4120, "evictable_tokens": 2900, "protected_tokens": 1220}}
+{"id": 0, "parent": -1, "token_len": 0, "children": [1], "lock_ref": 1, "hit_count": 0, "evicted": false, "last_access": 0.0}
+{"id": 1, "parent": 0, "token_len": 1024, "children": [2, 9], "lock_ref": 2, "hit_count": 156, "evicted": false, "last_access": 1755999.9}
+{"id": 2, "parent": 1, "token_len": 512, "children": [3, 4, 5], "lock_ref": 1, "hit_count": 87, "evicted": false, "last_access": 1755999.7}
+{"id": 3, "parent": 2, "token_len": 8, "children": [], "lock_ref": 0, "hit_count": 12, "evicted": false, "last_access": 1755998.2}
+{"id": 4, "parent": 2, "token_len": 256, "children": [6], "lock_ref": 0, "hit_count": 43, "evicted": false, "last_access": 1755999.1}
+{"id": 5, "parent": 2, "token_len": 3, "children": [], "lock_ref": 0, "hit_count": 2, "evicted": true, "last_access": 1755980.0}
+{"id": 6, "parent": 4, "token_len": 64, "children": [7, 8], "lock_ref": 0, "hit_count": 21, "evicted": false, "last_access": 1755998.8}
+{"id": 7, "parent": 6, "token_len": 4, "children": [], "lock_ref": 0, "hit_count": 9, "evicted": false, "last_access": 1755998.5}
+{"id": 8, "parent": 6, "token_len": 2, "children": [], "lock_ref": 0, "hit_count": 1, "evicted": true, "last_access": 1755975.0}
+{"id": 9, "parent": 1, "token_len": 32, "children": [10], "lock_ref": 0, "hit_count": 5, "evicted": false, "last_access": 1755999.3}
+{"id": 10, "parent": 9, "token_len": 128, "children": [], "lock_ref": 0, "hit_count": 4, "evicted": false, "last_access": 1755999.2}
