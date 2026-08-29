@@ -34,7 +34,11 @@ from sglang.srt.mem_cache.base_prefix_cache import (
     MatchPrefixParams,
 )
 
-sys.path.insert(0, "/mnt/d/Project/labs/kvscope")
+# Make kvscope importable from the repo checkout (works in WSL or Windows:
+# scripts/ is one level below the project root).
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from kvscope.dump import write_snapshot  # noqa: E402
 from kvscope.turns import TurnRecord, compute_hit_length_from_node  # noqa: E402
