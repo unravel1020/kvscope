@@ -1,0 +1,12 @@
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 1}
+{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 2}
+{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 3}
+{"turn": 4, "context_tokens": 640, "hit_length": 608, "new_tokens": 32, "hit_node_id": 4}
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 1}
+{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 6}
+{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 7}
+{"turn": 4, "context_tokens": 608, "hit_length": 608, "new_tokens": 0, "hit_node_id": 8}
+{"turn": 1, "context_tokens": 16, "hit_length": 0, "new_tokens": 16, "hit_node_id": 0}
+{"turn": 2, "context_tokens": 32, "hit_length": 16, "new_tokens": 16, "hit_node_id": 9}
+{"turn": 3, "context_tokens": 48, "hit_length": 32, "new_tokens": 16, "hit_node_id": 10}
+{"turn": 4, "context_tokens": 64, "hit_length": 48, "new_tokens": 16, "hit_node_id": 11}

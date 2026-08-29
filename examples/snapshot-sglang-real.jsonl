@@ -1,11 +1,14 @@
-{"type": "snapshot", "version": 1, "page_size": 1, "eviction_policy": "lru", "pool": {"total_tokens": 683, "used_tokens": 683, "evictable_tokens": 171, "protected_tokens": 512}}
-{"id": 0, "parent": -1, "token_len": 0, "children": [1], "lock_ref": 1, "hit_count": 0, "priority": 0, "evicted": false, "last_access": 92028.23756715}
-{"id": 1, "parent": 0, "token_len": 512, "children": [2, 6, 10], "lock_ref": 1, "hit_count": 10, "priority": 0, "evicted": false, "last_access": 92028.23756715}
-{"id": 2, "parent": 1, "token_len": 32, "children": [3], "lock_ref": 0, "hit_count": 4, "priority": 0, "evicted": false, "last_access": 92028.237218373}
-{"id": 3, "parent": 2, "token_len": 8, "children": [4], "lock_ref": 0, "hit_count": 3, "priority": 0, "evicted": false, "last_access": 92028.237218373}
-{"id": 4, "parent": 3, "token_len": 32, "children": [], "lock_ref": 0, "hit_count": 2, "priority": 0, "evicted": false, "last_access": 92028.237218373}
-{"id": 6, "parent": 1, "token_len": 32, "children": [7], "lock_ref": 0, "hit_count": 4, "priority": 0, "evicted": false, "last_access": 92028.237481426}
-{"id": 7, "parent": 6, "token_len": 8, "children": [8], "lock_ref": 0, "hit_count": 3, "priority": 0, "evicted": false, "last_access": 92028.237481426}
-{"id": 8, "parent": 7, "token_len": 32, "children": [9], "lock_ref": 0, "hit_count": 2, "priority": 0, "evicted": false, "last_access": 92028.237481426}
-{"id": 9, "parent": 8, "token_len": 24, "children": [], "lock_ref": 0, "hit_count": 1, "priority": 0, "evicted": false, "last_access": 92028.237504493}
-{"id": 10, "parent": 1, "token_len": 3, "children": [], "lock_ref": 0, "hit_count": 1, "priority": 0, "evicted": false, "last_access": 92028.237544146}
+{"type": "snapshot", "version": 1, "page_size": 1, "eviction_policy": "lru", "pool": {"total_tokens": 800, "used_tokens": 800, "evictable_tokens": 800, "protected_tokens": 0}}
+{"id": 0, "parent": -1, "token_len": 0, "children": [1, 9], "lock_ref": 1, "hit_count": 0, "priority": 0, "evicted": false, "last_access": 92294.835925258}
+{"id": 1, "parent": 0, "token_len": 512, "children": [2, 6], "lock_ref": 0, "hit_count": 9, "priority": 0, "evicted": false, "last_access": 92294.835818553}
+{"id": 2, "parent": 1, "token_len": 32, "children": [3], "lock_ref": 0, "hit_count": 4, "priority": 0, "evicted": false, "last_access": 92294.835559708}
+{"id": 3, "parent": 2, "token_len": 32, "children": [4], "lock_ref": 0, "hit_count": 3, "priority": 0, "evicted": false, "last_access": 92294.835559708}
+{"id": 4, "parent": 3, "token_len": 32, "children": [5], "lock_ref": 0, "hit_count": 2, "priority": 0, "evicted": false, "last_access": 92294.835559708}
+{"id": 5, "parent": 4, "token_len": 32, "children": [], "lock_ref": 0, "hit_count": 1, "priority": 0, "evicted": false, "last_access": 92294.835576127}
+{"id": 6, "parent": 1, "token_len": 32, "children": [7], "lock_ref": 0, "hit_count": 4, "priority": 0, "evicted": false, "last_access": 92294.835818553}
+{"id": 7, "parent": 6, "token_len": 32, "children": [8], "lock_ref": 0, "hit_count": 3, "priority": 0, "evicted": false, "last_access": 92294.835818553}
+{"id": 8, "parent": 7, "token_len": 32, "children": [], "lock_ref": 0, "hit_count": 2, "priority": 0, "evicted": false, "last_access": 92294.835818553}
+{"id": 9, "parent": 0, "token_len": 16, "children": [10], "lock_ref": 0, "hit_count": 4, "priority": 0, "evicted": false, "last_access": 92294.835925258}
+{"id": 10, "parent": 9, "token_len": 16, "children": [11], "lock_ref": 0, "hit_count": 3, "priority": 0, "evicted": false, "last_access": 92294.835925258}
+{"id": 11, "parent": 10, "token_len": 16, "children": [12], "lock_ref": 0, "hit_count": 2, "priority": 0, "evicted": false, "last_access": 92294.835925258}
+{"id": 12, "parent": 11, "token_len": 16, "children": [], "lock_ref": 0, "hit_count": 1, "priority": 0, "evicted": false, "last_access": 92294.835934998}

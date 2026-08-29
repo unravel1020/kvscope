@@ -17,6 +17,7 @@ from pathlib import Path
 from .report import build_report, render_text
 from .snapshot import load_snapshot
 from .tree import analyze_tree
+from .turns import load_turns, summarize_turns
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -58,6 +59,27 @@ def _build_parser() -> argparse.ArgumentParser:
         default=16,
         help="token_len below which a node counts as fragmentation (default: 16)",
     )
+
+    turns = sub.add_parser(
+        "turns",
+        help="analyze per-turn KV reuse of a multi-turn (agent) workload",
+        description=(
+            "Load a turns JSONL (per-turn hit_length/context_tokens) and "
+            "report how KV reuse evolves across the conversation."
+        ),
+    )
+    turns.add_argument(
+        "--input",
+        type=Path,
+        required=True,
+        help="path to turns JSONL (see scripts/simulate_agent_workload.py)",
+    )
+    turns.add_argument(
+        "--output-format",
+        choices=["text", "json"],
+        default="text",
+        help="report format (default: text)",
+    )
     return parser
 
 
@@ -82,6 +104,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(report, indent=2, ensure_ascii=False))
         else:
             print(render_text(report))
+        return 0
+
+    if args.command == "turns":
+        try:
+            records = load_turns(args.input)
+            summary = summarize_turns(records)
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            print(f"kvscope: error: {e}", file=sys.stderr)
+            return 1
+
+        if args.output_format == "json":
+            print(json.dumps(summary.to_dict(), indent=2, ensure_ascii=False))
+        else:
+            print(summary.render_text())
         return 0
 
     parser.print_help()
