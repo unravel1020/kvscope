@@ -35,6 +35,8 @@ class TurnRecord:
     new_tokens: int  # tokens that had to be computed (context_tokens - hit_length)
     hit_node_id: int  # matched node id (0 = root = cold miss)
     reused_after_split: bool = False  # True when the match ended mid-node (split)
+    timestamp: float = 0.0  # simulated wall-clock time of this turn (seconds)
+    gap_seconds: float = 0.0  # time since the previous turn (human thinking gap)
 
     @property
     def hit_ratio(self) -> float:
@@ -156,6 +158,8 @@ def load_turns(path: str | Path) -> list[TurnRecord]:
                     hit_length=int(obj["hit_length"]),
                     new_tokens=int(obj.get("new_tokens", 0)),
                     hit_node_id=int(obj.get("hit_node_id", 0)),
+                    timestamp=float(obj.get("timestamp", 0.0)),
+                    gap_seconds=float(obj.get("gap_seconds", 0.0)),
                 )
             )
     return records

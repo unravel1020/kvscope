@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 from .events import load_events
+from .gaps import analyze_gaps_from_file
 from .report import build_report, render_text
 from .snapshot import load_snapshot
 from .tree import analyze_tree
@@ -102,6 +103,34 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="report format (default: text)",
     )
+
+    gaps = sub.add_parser(
+        "gaps",
+        help="analyze inter-turn gaps and predict cache decay (TraceLab direction)",
+        description=(
+            "Load a turns JSONL with timestamp/gap_seconds, report the gap "
+            "distribution and gap->hit-ratio decay curve, and fit a logistic "
+            "P(hit|gap) model — the basis for predictive eviction."
+        ),
+    )
+    gaps.add_argument(
+        "--input",
+        type=Path,
+        required=True,
+        help="path to turns JSONL with gap_seconds/timestamp fields",
+    )
+    gaps.add_argument(
+        "--output-format",
+        choices=["text", "json"],
+        default="text",
+        help="report format (default: text)",
+    )
+    gaps.add_argument(
+        "--decay-threshold",
+        type=float,
+        default=300.0,
+        help="gap (seconds) at/above which the cache is assumed decaying (default: 300)",
+    )
     return parser
 
 
@@ -153,6 +182,21 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(stream.to_dict(), indent=2, ensure_ascii=False))
         else:
             print(stream.render_text())
+        return 0
+
+    if args.command == "gaps":
+        try:
+            stats = analyze_gaps_from_file(
+                args.input, decay_threshold_s=args.decay_threshold
+            )
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            print(f"kvscope: error: {e}", file=sys.stderr)
+            return 1
+
+        if args.output_format == "json":
+            print(json.dumps(stats.to_dict(), indent=2, ensure_ascii=False))
+        else:
+            print(stats.render_text())
         return 0
 
     parser.print_help()

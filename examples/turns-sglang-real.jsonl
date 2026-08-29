@@ -1,12 +1,35 @@
-{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 1}
-{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 2}
-{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 3}
-{"turn": 4, "context_tokens": 640, "hit_length": 608, "new_tokens": 32, "hit_node_id": 4}
-{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 1}
-{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 6}
-{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 7}
-{"turn": 4, "context_tokens": 608, "hit_length": 608, "new_tokens": 0, "hit_node_id": 8}
-{"turn": 1, "context_tokens": 16, "hit_length": 0, "new_tokens": 16, "hit_node_id": 0}
-{"turn": 2, "context_tokens": 32, "hit_length": 16, "new_tokens": 16, "hit_node_id": 9}
-{"turn": 3, "context_tokens": 48, "hit_length": 32, "new_tokens": 16, "hit_node_id": 10}
-{"turn": 4, "context_tokens": 64, "hit_length": 48, "new_tokens": 16, "hit_node_id": 11}
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 1, "timestamp": 6.375591537246681, "gap_seconds": 6.375591537246681}
+{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 2, "timestamp": 23.652182135431932, "gap_seconds": 17.27659059818525}
+{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 3, "timestamp": 65.87065394369205, "gap_seconds": 42.21847180826012}
+{"turn": 4, "context_tokens": 640, "hit_length": 608, "new_tokens": 32, "hit_node_id": 4, "timestamp": 75.65228973830993, "gap_seconds": 9.781635794617888}
+{"turn": 5, "context_tokens": 640, "hit_length": 640, "new_tokens": 0, "hit_node_id": 5, "timestamp": 82.2911368074038, "gap_seconds": 6.638847069093869}
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 1, "timestamp": 115.08567765308874, "gap_seconds": 32.794540845684935}
+{"turn": 2, "context_tokens": 576, "hit_length": 0, "new_tokens": 576, "hit_node_id": 0, "timestamp": 713.3421536830615, "gap_seconds": 598.2564760299728}
+{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 7, "timestamp": 748.3139351162384, "gap_seconds": 34.971781433176915}
+{"turn": 4, "context_tokens": 640, "hit_length": 608, "new_tokens": 32, "hit_node_id": 8, "timestamp": 785.7235477294134, "gap_seconds": 37.40961261317498}
+{"turn": 5, "context_tokens": 640, "hit_length": 640, "new_tokens": 0, "hit_node_id": 9, "timestamp": 791.0809795117068, "gap_seconds": 5.3574317822933555}
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 10, "timestamp": 834.4786462360593, "gap_seconds": 43.397666724352476}
+{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 11, "timestamp": 848.0300187257072, "gap_seconds": 13.551372489647985}
+{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 12, "timestamp": 871.5427187069017, "gap_seconds": 23.512699981194473}
+{"turn": 4, "context_tokens": 640, "hit_length": 0, "new_tokens": 640, "hit_node_id": 0, "timestamp": 1316.6172839570977, "gap_seconds": 445.07456525019603}
+{"turn": 5, "context_tokens": 640, "hit_length": 640, "new_tokens": 0, "hit_node_id": 14, "timestamp": 1354.8222156822767, "gap_seconds": 38.20493172517901}
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 15, "timestamp": 1399.9574639504367, "gap_seconds": 45.135248268159984}
+{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 16, "timestamp": 1458.4788309693022, "gap_seconds": 58.521367018865384}
+{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 17, "timestamp": 1493.8410656893298, "gap_seconds": 35.36223472002749}
+{"turn": 4, "context_tokens": 640, "hit_length": 608, "new_tokens": 32, "hit_node_id": 18, "timestamp": 1532.8596520693634, "gap_seconds": 39.01858638003353}
+{"turn": 5, "context_tokens": 640, "hit_length": 640, "new_tokens": 0, "hit_node_id": 19, "timestamp": 1569.6140200584853, "gap_seconds": 36.75436798912192}
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 15, "timestamp": 1577.1343611595466, "gap_seconds": 7.520341101061422}
+{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 20, "timestamp": 1598.0506991576626, "gap_seconds": 20.916337998115893}
+{"turn": 3, "context_tokens": 608, "hit_length": 0, "new_tokens": 608, "hit_node_id": 0, "timestamp": 2247.237028699208, "gap_seconds": 649.1863295415453}
+{"turn": 4, "context_tokens": 640, "hit_length": 0, "new_tokens": 640, "hit_node_id": 0, "timestamp": 2964.1974333643466, "gap_seconds": 716.9604046651382}
+{"turn": 5, "context_tokens": 640, "hit_length": 640, "new_tokens": 0, "hit_node_id": 23, "timestamp": 2989.2632032077013, "gap_seconds": 25.065769843354634}
+{"turn": 1, "context_tokens": 544, "hit_length": 512, "new_tokens": 32, "hit_node_id": 24, "timestamp": 3005.786089900133, "gap_seconds": 16.522886692431825}
+{"turn": 2, "context_tokens": 576, "hit_length": 544, "new_tokens": 32, "hit_node_id": 25, "timestamp": 3062.30209222432, "gap_seconds": 56.51600232418717}
+{"turn": 3, "context_tokens": 608, "hit_length": 576, "new_tokens": 32, "hit_node_id": 26, "timestamp": 3100.8042975360045, "gap_seconds": 38.50220531168435}
+{"turn": 4, "context_tokens": 640, "hit_length": 608, "new_tokens": 32, "hit_node_id": 27, "timestamp": 3145.9062714232737, "gap_seconds": 45.1019738872692}
+{"turn": 5, "context_tokens": 640, "hit_length": 640, "new_tokens": 0, "hit_node_id": 28, "timestamp": 3171.776320719944, "gap_seconds": 25.87004929667063}
+{"turn": 1, "context_tokens": 16, "hit_length": 0, "new_tokens": 16, "hit_node_id": 0, "timestamp": 3211.976307511919, "gap_seconds": 40.19998679197511}
+{"turn": 2, "context_tokens": 32, "hit_length": 16, "new_tokens": 16, "hit_node_id": 29, "timestamp": 3254.6300913163623, "gap_seconds": 42.6537838044431}
+{"turn": 3, "context_tokens": 48, "hit_length": 32, "new_tokens": 16, "hit_node_id": 30, "timestamp": 3302.310086451406, "gap_seconds": 47.67999513504346}
+{"turn": 4, "context_tokens": 64, "hit_length": 48, "new_tokens": 16, "hit_node_id": 31, "timestamp": 3309.075599866128, "gap_seconds": 6.7655134147220775}
+{"turn": 5, "context_tokens": 64, "hit_length": 64, "new_tokens": 0, "hit_node_id": 32, "timestamp": 3328.8013480447917, "gap_seconds": 19.72574817866365}
