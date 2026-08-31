@@ -195,3 +195,126 @@ kvscope/                          # 项目名（SGLang KV cache 显微镜）
 
 - 实验设计：相同请求序列 + 有限 KV 池 + 唯一差异 = "长间隙主动清理"
 - 结果：同命中率下预测性驱逐 -29% 驱逐轮次（CacheWise 方向实证）
+
+## 九、架构图（mermaid，渲染见 GUI 或任意 mermaid 渲染器）
+
+### 9.1 总体分层架构
+
+```mermaid
+flowchart TD
+    subgraph DS["数据源层"]
+        S1["真实 SGLang 服务器<br/>RadixCache<br/>(v0.7 家庭机 GPU)"]
+        S2["create_simulated 模拟<br/>simulate_agent_workload.py<br/>(纯 CPU 办公本)"]
+        S3["驱逐对比实验<br/>simulate_evict_compare.py"]
+    end
+    subgraph IN["输入 JSONL（版本化 schema）"]
+        F1["snapshot.jsonl"]
+        F2["turns.jsonl"]
+        F3["events.jsonl"]
+        F4["evict-compare.json"]
+    end
+    subgraph AN["分析内核 kvscope/（零依赖 stdlib）"]
+        M1["snapshot.py 解析"]
+        M2["tree.py DFS 分析"]
+        M3["turns.py KV-reuse"]
+        M4["events.py 事件流"]
+        M5["gaps.py 衰减模型"]
+        M6["evict.py 对比"]
+        M7["dump.py 遍历导出"]
+        M8["report.py 渲染"]
+    end
+    subgraph CLI["CLI 层"]
+        C1["analyze"]
+        C2["turns"]
+        C3["events"]
+        C4["gaps"]
+        C5["evict"]
+    end
+    S1 -->|dump.py| F1
+    S2 -->|write_snapshot| F1
+    S2 -->|EventCollector| F3
+    S2 -->|TurnRecord| F2
+    S3 -->|json.dump| F4
+    F1 --> M1 --> M2 --> M8
+    F2 --> M3 --> M8
+    F3 --> M4 --> M8
+    F2 --> M5 --> M8
+    F4 --> M6 --> M8
+    M8 --> C1 & C2 & C3 & C4 & C5
+    C1 & C2 & C3 & C4 & C5 --> O1["text 报告"]
+    C1 & C2 & C3 & C4 & C5 --> O2["JSON 输出"]
+```
+
+### 9.2 分析内核数据流（模块依赖）
+
+```mermaid
+flowchart LR
+    subgraph PARSER["解析器（JSONL → dataclass）"]
+        P1["Snapshot<br/>snapshot.py"]
+        P2["list[TurnRecord]<br/>turns.py::load_turns"]
+        P3["EventStream<br/>events.py::load_events"]
+    end
+    subgraph CORE["分析逻辑"]
+        T1["analyze_tree()<br/>单次 DFS：结构/共享/碎片/驱逐/热度"]
+        T2["summarize_turns()<br/>per-turn 命中率聚合"]
+        T3["analyze_gaps()<br/>直方图 + logistic P(hit|gap)"]
+        T4["load_events 派生<br/>churn / 驱逐时间线"]
+        T5["build_evict_report()<br/>双策略 delta"]
+    end
+    subgraph RENDER["呈现"]
+        R1["report.py<br/>render_text / to_dict"]
+        R2["evict.py<br/>render_text"]
+    end
+    P1 --> T1 --> R1
+    P2 --> T2 --> R1
+    P3 --> T4 --> R1
+    P2 --> T3 --> R1
+    F4["evict-compare.json"] --> T5 --> R2
+```
+
+### 9.3 两条运行时路径（办公本模拟 vs 家庭机真实）
+
+```mermaid
+flowchart TD
+    A["办公本 WSL（白天）"] --> B["create_simulated()<br/>SGLang 真实 radix 代码<br/>+ Mock allocator"]
+    B --> B1["插入/匹配/驱逐<br/>真实 TreeNode 操作"]
+    B1 --> B2["dump.py 遍历树"]
+    B2 --> B3["snapshot.jsonl"]
+    B1 --> B4["EventCollector<br/>(自实现确定性哈希)"]
+    B4 --> B5["events.jsonl"]
+    C["家庭机 GPU（晚上 v0.7）"] --> D["真实 SGLang 服务器<br/>小模型"]
+    D --> D1["KVCacheEventRecorder.take()<br/>或 dump_radix_cache"]
+    D1 --> B3
+    B3 --> E["kvscope analyze<br/>(纯 CPU 分析)"]
+    B5 --> E
+```
+
+### 9.4 一次 `kvscope analyze` 的调用链
+
+```mermaid
+sequenceDiagram
+    participant CLI as cli.py
+    participant S as snapshot.py
+    participant T as tree.py
+    participant R as report.py
+    CLI->>S: load_snapshot(path)
+    S-->>CLI: Snapshot (nodes dict + pool)
+    CLI->>T: analyze_tree(snapshot)
+    T->>T: 显式栈 DFS<br/>深度/共享/碎片/驱逐/热度
+    T-->>CLI: TreeMetrics
+    CLI->>R: build_report(snapshot, metrics)
+    R-->>CLI: report dict
+    CLI->>R: render_text(report)
+    R-->>CLI: str（或 json.dumps）
+    CLI-->>User: 打印报告
+```
+
+### 9.5 架构要点速览
+
+| 层 | 职责 | 关键约束 |
+|----|------|---------|
+| 数据源层 | 产生 snapshot/turns/events/evict 数据 | scripts/ 依赖 sglang；真实源（S1）v0.7 待打通 |
+| 输入层 | 版本化 JSONL schema | version 字段；utf-8-sig 容错 |
+| 分析内核 | 纯 stdlib 分析 | 零 SGLang 依赖（ADR-009）；单次 DFS（无二次方） |
+| CLI 层 | 5 个子命令 | 模仿 vLLM CLISubcommand 模式 |
+| 输出层 | text / json 双格式 | report dict 单一数据源 |
